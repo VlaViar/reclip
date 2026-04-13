@@ -1,0 +1,12 @@
+services:
+  reclip:
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      LOG_LEVEL: INFO
+      FFMPEG_PRESET: veryfast
+      FFMPEG_CRF: "23"
+      YTDLP_CONCURRENT_FRAGMENT_DOWNLOADS: "1"

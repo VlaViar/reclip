@@ -1,0 +1,2416 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Бесплатный загрузчик видео в разных форматах">
+  <meta property="og:title" content="ReClip — Бесплатная загрузка видео">
+  <meta property="og:description" content="Вставьте одну или несколько ссылок на видео, получите метаданные, выберите качество и загрузите видео.">
+  <meta property="og:type" content="website">
+  <title>ReClip — Бесплатная загрузка видео</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --bg-card: rgba(30, 41, 59, 0.72);
+      --bg-card-strong: rgba(15, 23, 42, 0.82);
+      --primary-blue: #2563eb;
+      --primary-hover: #1d4ed8;
+      --neon-accent: #00f0ff;
+      --neon-purple: #bd00ff;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-soft: #cbd5e1;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --success: #22c55e;
+      --error: #f87171;
+      --warning: #f59e0b;
+      --container-width: 1200px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --transition: all 0.3s ease;
+      --shadow-blue: 0 0 20px rgba(37, 99, 235, 0.25);
+      --shadow-cyan: 0 0 24px rgba(0, 240, 255, 0.12);
+      --shimmer: linear-gradient(90deg, rgba(30,41,59,0.45) 25%, rgba(71,85,105,0.4) 50%, rgba(30,41,59,0.45) 75%);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-dark);
+      background-image:
+        linear-gradient(rgba(11, 15, 25, 0.78), rgba(11, 15, 25, 0.96)),
+        radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: cover, 80px 80px;
+      background-position: center, 0 0;
+      background-attachment: fixed, fixed;
+      background-repeat: no-repeat, repeat;
+      color: var(--text-main);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at top left, rgba(0,240,255,0.08), transparent 28%),
+        radial-gradient(circle at top right, rgba(189,0,255,0.08), transparent 24%);
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: var(--container-width);
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    button, textarea { font: inherit; }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--border-color);
+      backdrop-filter: blur(10px);
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 20, 33, 0.8);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+      z-index: -1;
+    }
+
+    .nav-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 76px;
+      gap: 16px;
+    }
+
+    .logo {
+      font-weight: 800;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, var(--neon-accent), var(--primary-blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      cursor: default;
+      user-select: none;
+    }
+
+    .logo span {
+      -webkit-text-fill-color: var(--text-main);
+      color: var(--text-main);
+    }
+
+    .nav-nick {
+      font-weight: 800;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(270deg, var(--primary-blue), var(--neon-accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      cursor: default;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .nav-nick span {
+      -webkit-text-fill-color: var(--text-main);
+      color: var(--text-main);
+    }
+
+    .fetch-btn,
+    .dl-all-btn,
+    .dl-all-cancel-btn,
+    .card-dl-btn,
+    .card-cancel-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      color: white;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+
+    .fetch-btn,
+    .dl-all-btn {
+      background: var(--primary-blue);
+      padding: 12px 24px;
+      box-shadow: var(--shadow-blue);
+    }
+
+    .dl-all-cancel-btn {
+      background: rgba(220, 38, 38, 0.92);
+      padding: 12px 24px;
+      box-shadow: 0 0 20px rgba(220, 38, 38, 0.24);
+    }
+
+    .fetch-btn:hover,
+    .dl-all-btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+
+    .dl-all-cancel-btn:hover {
+      background: rgb(185, 28, 28);
+      transform: translateY(-2px);
+    }
+
+    .fetch-btn:disabled,
+    .dl-all-btn:disabled,
+    .dl-all-cancel-btn:disabled,
+    .card-dl-btn:disabled,
+    .card-cancel-btn:disabled,
+    .q-chip:disabled,
+    .pill:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .hero {
+      padding: 84px 0 34px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.6rem, 5vw, 4.4rem);
+      line-height: 1.05;
+      margin-bottom: 18px;
+      letter-spacing: -0.04em;
+    }
+
+    .hero h1 span {
+      color: var(--neon-accent);
+      text-shadow: 0 0 20px rgba(0, 240, 255, 0.32);
+    }
+
+    .hero p {
+      max-width: 740px;
+      margin: 0 auto;
+      color: var(--text-muted);
+      font-size: 1.08rem;
+    }
+
+    .workspace {
+      padding: 26px 0 0;
+    }
+
+    .panel,
+    .card,
+    .footer-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 14px 40px -18px rgba(0, 0, 0, 0.6);
+    }
+
+    .panel {
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .panel-title-badge svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .video-title-badge svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 24px 28px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .panel-title {
+      font-size: 1.18rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .panel-title-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-blue), var(--neon-purple));
+      color: white;
+      font-size: 0.9rem;
+      box-shadow: var(--shadow-blue);
+    }
+
+    .panel-body {
+      padding: 24px 28px 28px;
+    }
+
+    .input-wrap {
+      display: grid;
+      gap: 16px;
+    }
+
+    .textarea-wrap {
+      position: relative;
+      display: grid;
+    }
+
+    .textarea-wrap .resize-grip {
+      position: absolute;
+      right: 6px;
+      bottom: 6px;
+      width: 14px;
+      height: 14px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .textarea-wrap .resize-grip::before {
+      content: '';
+      display: block;
+      width: 100%;
+      height: 100%;
+      background:
+        linear-gradient(135deg,
+          transparent 30%,
+          rgba(148,163,184,0.40) 30%, rgba(148,163,184,0.40) 35%, transparent 35%,
+          transparent 50%,
+          rgba(148,163,184,0.40) 50%, rgba(148,163,184,0.40) 55%, transparent 55%,
+          transparent 70%,
+          rgba(148,163,184,0.40) 70%, rgba(148,163,184,0.40) 75%, transparent 75%);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 128px;
+      padding: 18px 20px;
+      resize: vertical;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(2, 6, 23, 0.5);
+      color: var(--text-main);
+      outline: none;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    textarea::-webkit-resizer {
+      background: transparent;
+    }
+
+    textarea::placeholder { color: #7f8ca3; }
+
+    textarea:focus {
+      border-color: rgba(0, 240, 255, 0.4);
+      box-shadow: 0 0 0 4px rgba(0, 240, 255, 0.08), var(--shadow-cyan);
+    }
+
+    .hint {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .pill-group {
+      display: inline-flex;
+      gap: 8px;
+      padding: 6px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(255,255,255,0.08);
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      padding: 11px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .pill:hover { color: var(--text-main); }
+
+    .pill.active {
+      color: white;
+      background: linear-gradient(135deg, var(--primary-blue), #1e40af);
+      box-shadow: 0 8px 24px -14px rgba(37, 99, 235, 0.9);
+    }
+
+    .format-warning {
+      margin-top: 12px;
+      color: var(--warning);
+      font-size: 0.92rem;
+    }
+
+    .controls > .format-warning {
+      margin: 0;
+    }
+
+    .fetch-btn { min-width: 150px; }
+
+    .cards {
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      --card-primary-control-height: 62px;
+      --card-format-control-height: 58px;
+      position: relative;
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      grid-template-areas:
+        'media head'
+        'controls content';
+      align-items: start;
+      gap: 20px;
+      padding: 20px;
+      transition: var(--transition);
+      overflow: hidden;
+    }
+
+    .card:hover {
+      border-color: rgba(37, 99, 235, 0.4);
+      box-shadow: 0 20px 40px -22px rgba(0, 0, 0, 0.72), var(--shadow-blue);
+      transform: translateY(-2px);
+    }
+
+    .card-remove-btn {
+      position: relative;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      background: rgba(127, 29, 29, 0.2);
+      color: #fecaca;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      z-index: 1;
+      flex: 0 0 auto;
+      margin-left: auto;
+      align-self: flex-start;
+    }
+
+    .card-remove-btn:hover {
+      background: rgba(127, 29, 29, 0.36);
+      border-color: rgba(248, 113, 113, 0.55);
+      color: white;
+      box-shadow: 0 0 18px rgba(248, 113, 113, 0.16);
+    }
+
+    .card-remove-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .card-thumb {
+      grid-area: media;
+      position: relative;
+      aspect-ratio: 16 / 9;
+      min-height: 0;
+      width: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+      background: rgba(2, 6, 23, 0.6);
+      border: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      isolation: isolate;
+    }
+
+    .card-thumb.vertical::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .card-thumb img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .thumb-main {
+      object-fit: cover;
+      object-position: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .thumb-bg-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      filter: none;
+      transform: scale(1.1);
+      opacity: 1;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .thumb-fg {
+      position: relative;
+      z-index: 2;
+      object-fit: contain;
+      object-position: center;
+    }
+
+    .card-thumb .no-thumb,
+    .card-error-icon {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 3;
+    }
+
+    .card-thumb .no-thumb svg,
+    .card-error-icon svg {
+      width: 34px;
+      height: 34px;
+      opacity: 0.88;
+    }
+
+    .card-thumb.loading,
+    .skeleton-line {
+      background: var(--shimmer);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    .skeleton-lines {
+      display: grid;
+      gap: 10px;
+      align-content: center;
+    }
+
+    .skeleton-line {
+      height: 14px;
+      border-radius: 999px;
+    }
+
+    .skeleton-line.medium { width: 78%; }
+    .skeleton-line.short { width: 42%; height: 12px; }
+
+    .card-head {
+      grid-area: head;
+      min-width: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .card-title-wrap {
+      min-width: 0;
+      flex: 1 1 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .card-body {
+      grid-area: content;
+      min-width: 0;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-self: stretch;
+    }
+
+    .card-body-main {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: minmax(var(--card-primary-control-height), auto) auto;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .card-quality-slot {
+      min-width: 0;
+      min-height: var(--card-primary-control-height);
+      display: grid;
+      align-content: center;
+    }
+
+    .card-time-slot {
+      min-width: 0;
+      display: grid;
+      align-content: start;
+    }
+
+    .card-side-controls {
+      grid-area: controls;
+      display: grid;
+      gap: 12px;
+      align-items: start;
+      min-width: 0;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+      word-break: break-word;
+    }
+
+    .card-meta {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .card-format-block {
+      display: grid;
+      gap: 10px;
+      width: 100%;
+      align-content: start;
+    }
+
+    .card-pill-group {
+      width: 100%;
+      max-width: 100%;
+      min-height: var(--card-format-control-height);
+      align-items: center;
+    }
+
+    .card-pill-group .pill {
+      flex: 1 1 0;
+      text-align: center;
+    }
+
+    .card-format-warning {
+      margin: 0;
+    }
+
+    .card-format-warning.is-hidden {
+      display: none;
+    }
+
+    .time-tools {
+      margin-top: 0;
+      width: 100%;
+      padding: 12px 12px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(2, 6, 23, 0.36);
+      display: grid;
+      gap: 10px;
+    }
+
+    .trim-warning {
+      margin: 0;
+      color: var(--warning);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .trim-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 0.86rem;
+      user-select: none;
+      width: fit-content;
+    }
+
+    .trim-toggle input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary-blue);
+      cursor: pointer;
+    }
+
+    .time-fields {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 10px;
+    }
+
+    .time-field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .time-field span {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      line-height: 1;
+    }
+
+    .time-input {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(15, 23, 42, 0.82);
+      color: var(--text-main);
+      padding: 8px 10px;
+      outline: none;
+      transition: var(--transition);
+      font-size: 0.9rem;
+    }
+
+    .time-input:focus {
+      border-color: rgba(0, 240, 255, 0.35);
+      box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.07);
+    }
+
+    .trim-reset {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      align-self: end;
+      height: calc(1.08rem + 18px);
+      padding: 0 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(15, 23, 42, 0.82);
+      color: var(--text-soft);
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+      font-size: 0.9rem;
+      line-height: 1.2;
+    }
+
+    .trim-reset:hover {
+      border-color: rgba(0, 240, 255, 0.28);
+      color: var(--text-main);
+      background: rgba(30, 41, 59, 0.88);
+      box-shadow: var(--shadow-cyan);
+    }
+
+    .time-slider-row {
+      display: grid;
+      grid-template-columns: auto auto;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .time-range-label,
+    .time-slider-value {
+      color: var(--text-muted);
+      font-size: 0.84rem;
+      white-space: nowrap;
+    }
+
+    .time-dual {
+      position: relative;
+      width: 100%;
+      height: 24px;
+    }
+
+    .time-dual .range-base,
+    .time-dual .range-selected {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 4px;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    .time-dual .range-base {
+      background: rgba(255,255,255,0.18);
+    }
+
+    .time-dual .range-selected {
+      left: var(--from, 0%);
+      right: auto;
+      width: calc(var(--to, 100%) - var(--from, 0%));
+      min-width: 0;
+      background: linear-gradient(90deg, var(--primary-blue), var(--neon-accent));
+      box-shadow: var(--shadow-cyan);
+    }
+
+    .time-dual input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      margin: 0;
+      background: transparent;
+      pointer-events: none;
+      touch-action: none;
+    }
+
+    .time-dual input.range-start,
+    .time-dual input.range-end {
+      z-index: 2;
+    }
+
+    .time-dual input[type="range"]:focus {
+      z-index: 3;
+    }
+
+    .time-dual input[type="range"]::-webkit-slider-runnable-track {
+      height: 24px;
+      background: transparent;
+    }
+
+    .time-dual input[type="range"]::-moz-range-track {
+      height: 24px;
+      background: transparent;
+      border: none;
+    }
+
+    .time-dual input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #dbeafe;
+      background: var(--primary-blue);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.45);
+      cursor: ew-resize;
+      margin-top: 4px;
+      pointer-events: auto;
+    }
+
+    .time-dual input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #dbeafe;
+      background: var(--primary-blue);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.45);
+      cursor: ew-resize;
+      pointer-events: auto;
+    }
+
+    .quality-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      align-items: stretch;
+      align-content: stretch;
+      gap: 8px;
+      min-width: 0;
+      width: 100%;
+      align-self: center;
+    }
+
+    .card-time-slot .time-tools.collapsed {
+      align-self: center;
+    }
+
+    .card-status-panel {
+      min-width: 0;
+    }
+
+    .card-status-panel .card-status {
+      display: block;
+    }
+
+    .card-dl-btn {
+      background: rgba(37, 99, 235, 0.18);
+      border-color: rgba(37, 99, 235, 0.35);
+      color: #dbeafe;
+      padding: 14px 18px;
+      box-shadow: none;
+      white-space: normal;
+      align-self: stretch;
+      width: 100%;
+      min-height: var(--card-primary-control-height);
+      border-radius: 16px;
+    }
+
+    .card-dl-btn:hover {
+      background: rgba(37, 99, 235, 0.26);
+      transform: translateY(-1px);
+    }
+
+    .card-dl-btn.error {
+      background: rgba(127, 29, 29, 0.2);
+      border-color: rgba(248, 113, 113, 0.3);
+      color: #fee2e2;
+    }
+
+    .card-cancel-btn {
+      background: rgba(127, 29, 29, 0.2);
+      border-color: rgba(248, 113, 113, 0.3);
+      color: #fee2e2;
+      padding: 14px 18px;
+      box-shadow: none;
+      white-space: normal;
+      min-height: var(--card-primary-control-height);
+      width: 100%;
+      border-radius: 16px;
+    }
+
+    .card-cancel-btn:hover {
+      background: rgba(127, 29, 29, 0.36);
+      border-color: rgba(248, 113, 113, 0.55);
+      color: white;
+      box-shadow: 0 0 18px rgba(248, 113, 113, 0.16);
+      transform: translateY(-1px);
+    }
+
+    .q-chip {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(15, 23, 42, 0.82);
+      color: var(--text-muted);
+      padding: 5px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.82rem;
+      line-height: 1.1;
+      white-space: normal;
+      width: 100%;
+      min-height: 41px;
+      text-align: center;
+      overflow-wrap: normal;
+      word-break: normal;
+      hyphens: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .q-chip-label {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      align-content: center;
+      justify-content: center;
+      gap: 2px 4px;
+      width: 100%;
+      min-height: 2.2em;
+      padding: 0 2px;
+      white-space: normal;
+    }
+
+    .q-chip-segment {
+      display: inline;
+      white-space: nowrap;
+    }
+
+    .q-chip:hover {
+      border-color: rgba(255,255,255,0.2);
+      color: var(--text-main);
+    }
+
+    .q-chip.active {
+      border-color: rgba(0, 240, 255, 0.4);
+      color: var(--text-main);
+      background: rgba(0, 240, 255, 0.09);
+      box-shadow: var(--shadow-cyan);
+    }
+
+    .card-status {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .card-status.downloading { color: #7dd3fc; }
+    .card-status.error { color: #fca5a5; }
+
+    .card.card-error {
+      border-color: rgba(248, 113, 113, 0.22);
+      background: rgba(127, 29, 29, 0.18);
+    }
+
+    .card-error-icon {
+      background: linear-gradient(180deg, rgba(127, 29, 29, 0.2), rgba(69, 10, 10, 0.42));
+      color: var(--error);
+    }
+
+    .card-error-msg {
+      color: #fecaca;
+      font-size: 0.98rem;
+    }
+
+    .card-error-url {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      word-break: break-all;
+    }
+
+    .dl-all-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .spin {
+      display: inline-block;
+      flex: 0 0 auto;
+      width: 14px;
+      height: 14px;
+      border: 2px solid currentColor;
+      border-top-color: currentColor;
+      border-right-color: transparent;
+      border-bottom-color: currentColor;
+      border-left-color: currentColor;
+      border-radius: 50%;
+      animation-name: spin;
+      animation-duration: 0.7s;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+      animation-play-state: running;
+      transform-origin: center center;
+      vertical-align: middle;
+    }
+
+    .card-status-body {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .card-status-text {
+      min-width: 0;
+    }
+
+    .footer {
+      padding: 0 0 70px;
+    }
+
+    .footer-box {
+      margin-top: 0;
+      padding: 24px 28px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.96rem;
+    }
+
+    .footer-box strong {
+      color: var(--text-soft);
+      font-weight: 600;
+    }
+
+    .footer-note {
+      margin-top: 12px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      opacity: 0.9;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    @media (max-width: 900px) {
+      .card {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          'media'
+          'head'
+          'controls'
+          'content';
+        row-gap: 12px;
+        padding-top: 20px;
+      }
+      .card-thumb {
+        width: calc(100% - 46px);
+        max-width: calc(100% - 46px);
+      }
+      .card-remove-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 4;
+        margin-left: 0;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body { background-attachment: scroll, scroll, scroll; }
+      .container {
+        padding-left: max(14px, calc(env(safe-area-inset-left) + 8px));
+        padding-right: max(14px, calc(env(safe-area-inset-right) + 8px));
+      }
+      .hero { padding-top: 58px; }
+      .panel-head,
+      .panel-body,
+      .footer-box { padding-left: 18px; padding-right: 18px; }
+      .controls { align-items: stretch; }
+      .pill-group { width: auto; justify-content: flex-start; }
+      .pill { flex: 0 0 auto; padding: 10px 14px; }
+      .card-pill-group {
+        width: 100%;
+      }
+      .card-pill-group .pill {
+        flex: 1 1 0;
+      }
+      .card-cancel-btn {
+        width: 100%;
+      }
+      .quality-list {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .q-chip {
+        width: 100%;
+        min-height: 41px;
+        padding: 5px 12px;
+        text-align: center;
+        white-space: normal;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .card-dl-btn,
+      .dl-all-btn,
+      .dl-all-cancel-btn {
+        width: 100%;
+      }
+      .time-fields {
+        grid-template-columns: 1fr;
+      }
+      .trim-reset {
+        width: 100%;
+      }
+      .time-slider-row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 6px;
+        align-items: center;
+      }
+      .time-slider-value {
+        text-align: right;
+      }
+      textarea {
+        resize: none;
+      }
+      .textarea-wrap .resize-grip {
+        pointer-events: auto;
+        width: 44px;
+        height: 44px;
+        right: 0;
+        bottom: 0;
+        cursor: ns-resize;
+        touch-action: none;
+      }
+      .textarea-wrap .resize-grip::before {
+        width: 18px;
+        height: 18px;
+        position: absolute;
+        right: 6px;
+        bottom: 6px;
+      }
+      .fetch-btn { width: 100%; }
+      .dl-all-bar {
+        justify-content: stretch;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .nav-wrapper {
+        min-height: 68px;
+      }
+      .nav-nick { font-size: 1.4rem; }
+
+      .logo { font-size: 1.4rem; }
+      .hero h1 { font-size: 2.2rem; }
+      .hero p { font-size: 1rem; }
+      .card-title { font-size: 1.08rem; }
+      .card-meta,
+      .card-status,
+      .card-error-msg,
+      .card-error-url,
+      .hint,
+      .footer-box,
+      .format-warning { font-size: 0.9rem; }
+
+      .footer-note { font-size: 0.72rem; }
+
+      .quality-list {
+        grid-template-columns: 1fr;
+      }
+
+      .dl-all-bar {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container nav-wrapper">
+      <div class="logo" aria-label="ReClip">Re<span>Clip</span></div>
+      <div class="nav-nick" aria-label="Vlaviar">VlaViar</div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero container">
+      <h1>Бесплатная загрузка видео в форматах <span>MP4 и MP3</span></h1>
+      <p>Вставьте одну или несколько ссылок на видео, получите метаданные, выберите качество и загрузите видео в формате MP4 или MP3.</p>
+    </section>
+
+    <section class="workspace container" id="downloader">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <span class="panel-title-badge video-title-badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" stroke="none">
+                <polygon points="8,6 18,12 8,18"></polygon>
+              </svg>
+            </span>
+            Выбор видео
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="input-wrap">
+            <div class="textarea-wrap">
+              <textarea id="urls" placeholder="Вставьте один или несколько URL-адресов..."></textarea>
+              <span class="resize-grip" aria-hidden="true"></span>
+            </div>
+            <p class="hint">Если у вас несколько URL-адресов, разделяйте их пробелами, запятыми или переносом строки. Нажмите на кнопку "Найти", чтобы получить метаданные.</p>
+            <div class="controls">
+              <button class="fetch-btn" id="goBtn" type="button" onclick="go()">Найти</button>
+              <p id="urlLimitWarning" class="format-warning" hidden>Одновременно можно находить и загружать не более 10 видео.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="resultsSection" hidden>
+        <div class="panel-head">
+          <div class="panel-title">
+            <span class="panel-title-badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <path d="M7 10l5 5 5-5"></path>
+                <path d="M12 15V3"></path>
+              </svg>
+            </span>
+            Загрузка
+          </div>
+        </div>
+        <div class="panel-body">
+          <div id="cards" class="cards" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer container">
+    <div class="footer-box">
+    <strong>Поддерживаемые платформы:</strong> YouTube, Rutube, TikTok, Instagram, Facebook, Twitter/X, VK Видео, Дзен, Reddit, Twitch, Pinterest и многие другие.
+    </div>
+    <div class="footer-note">&copy; 2026 ReClip (создано VlaViar)</div>
+  </footer>
+
+<script>
+  const BASE_PATH = '';
+  let cardData = [];
+  let nextInfoRequestId = 0;
+  const cardInfoCache = new Map();
+  const MIN_TRIM_GAP_SEC = 1;
+  const MAX_ACTIVE_VIDEOS = 10;
+  const ALLOWED_FORMATS = new Set(['video', 'mp3']);
+
+  updateUrlLimitWarning();
+
+  function getFormatsForType(card, formatType) {
+    if (formatType === 'mp3') return card.mp3Formats || [];
+    return card.formats || [];
+  }
+
+  function isFormatAvailable(card, formatType) {
+    return getFormatsForType(card, formatType).length > 0;
+  }
+
+  function getPreferredCardFormat(card) {
+    const activeFormat = card?.activeFormat;
+    if (ALLOWED_FORMATS.has(activeFormat) && isFormatAvailable(card, activeFormat)) {
+      return activeFormat;
+    }
+    if (isFormatAvailable(card, 'video')) return 'video';
+    if (isFormatAvailable(card, 'mp3')) return 'mp3';
+    return 'video';
+  }
+
+  function ensureCardFormat(card) {
+    if (!card) return 'video';
+    card.activeFormat = getPreferredCardFormat(card);
+    return card.activeFormat;
+  }
+
+  function canDownloadCard(card) {
+    return isFormatAvailable(card, ensureCardFormat(card));
+  }
+
+  function ensureSelectedFormat(card, formatType) {
+    if (!card.selectedFormats) card.selectedFormats = {};
+
+    const formats = getFormatsForType(card, formatType);
+    if (!formats.length) {
+      card.selectedFormats[formatType] = null;
+      return null;
+    }
+
+    const selected = card.selectedFormats[formatType];
+    const selectedExists = formats.some(f => String(f.id) === String(selected));
+    if (selectedExists) return String(selected);
+
+    card.selectedFormats[formatType] = String(formats[0].id);
+    return card.selectedFormats[formatType];
+  }
+
+  function parseUrls(text) {
+    return [...new Set(text.split(/[\s,]+/).map(u => u.trim()).filter(u => u.startsWith('http')))];
+  }
+
+  function updateUrlLimitWarning(urls = parseUrls(document.getElementById('urls')?.value || '')) {
+    const warning = document.getElementById('urlLimitWarning');
+    const btn = document.getElementById('goBtn');
+    const isWithinLimit = urls.length <= MAX_ACTIVE_VIDEOS;
+    if (warning) warning.hidden = isWithinLimit;
+    if (btn) btn.disabled = !isWithinLimit;
+    return isWithinLimit;
+  }
+
+  function cloneFormats(list) {
+    return Array.isArray(list) ? list.map(item => ({ ...item })) : [];
+  }
+
+  function cloneCardInfo(data) {
+    return {
+      title: data?.title || '',
+      thumbnail: data?.thumbnail || '',
+      is_vertical: !!data?.is_vertical,
+      duration: data?.duration ?? null,
+      uploader: data?.uploader || '',
+      site: data?.site || '',
+      formats: cloneFormats(data?.formats),
+      m4a_formats: cloneFormats(data?.m4a_formats),
+      mp3_formats: cloneFormats(data?.mp3_formats),
+      audio_caps: { ...(data?.audio_caps || { mp3: false, m4a: false }) },
+    };
+  }
+
+  function cacheCardInfo(url, data) {
+    if (!url || !data) return;
+    cardInfoCache.set(url, cloneCardInfo(data));
+  }
+
+  function getCachedCardInfo(url) {
+    const cached = cardInfoCache.get(url);
+    return cached ? cloneCardInfo(cached) : null;
+  }
+
+  function buildCardFromInfo(url, data, previousCard = null) {
+    const duration = data?.duration ?? null;
+    const nextCard = {
+      ...(previousCard && previousCard.url === url ? previousCard : {}),
+      url,
+      status: 'ready',
+      title: data?.title || '',
+      thumbnail: data?.thumbnail || '',
+      isVertical: !!data?.is_vertical,
+      duration,
+      trimEnabled: previousCard?.trimEnabled ?? false,
+      clipStartSec: previousCard?.clipStartSec ?? 0,
+      clipEndSec: previousCard?.clipEndSec ?? (duration || null),
+      uploader: data?.uploader || '',
+      site: data?.site || '',
+      formats: cloneFormats(data?.formats),
+      m4aFormats: cloneFormats(data?.m4a_formats),
+      mp3Formats: cloneFormats(data?.mp3_formats),
+      selectedFormats: { ...(previousCard?.selectedFormats || {}) },
+      activeFormat: previousCard?.activeFormat || null,
+      audioCaps: { ...(data?.audio_caps || { mp3: false, m4a: false }) },
+      infoRequestId: null,
+      jobId: null,
+      pollTimer: null,
+      downloadStatusText: '',
+      error: null,
+    };
+
+    if (!nextCard.selectedFormats.video && nextCard.formats[0]?.id != null) {
+      nextCard.selectedFormats.video = String(nextCard.formats[0].id);
+    }
+    if (!nextCard.selectedFormats.m4a && nextCard.m4aFormats[0]?.id != null) {
+      nextCard.selectedFormats.m4a = String(nextCard.m4aFormats[0].id);
+    }
+    if (!nextCard.selectedFormats.mp3 && nextCard.mp3Formats[0]?.id != null) {
+      nextCard.selectedFormats.mp3 = String(nextCard.mp3Formats[0].id);
+    }
+
+    ensureTimeState(nextCard);
+    ensureCardFormat(nextCard);
+    return nextCard;
+  }
+
+  function fmtDur(s) {
+    if (!s) return '';
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  }
+
+  function fmtClock(totalSec) {
+    if (!Number.isFinite(totalSec) || totalSec < 0) return '00:00';
+    const sec = Math.floor(totalSec);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) {
+      return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+
+  function parseClockInput(value) {
+    const text = String(value ?? '').trim();
+    if (!text) return null;
+
+    if (/^\d+(\.\d+)?$/.test(text)) {
+      const num = Number(text);
+      return Number.isFinite(num) && num >= 0 ? num : null;
+    }
+
+    const parts = text.split(':').map(p => p.trim());
+    if (!parts.length || parts.length > 3 || parts.some(p => !p)) return null;
+    if (!parts.every(p => /^\d+(\.\d+)?$/.test(p))) return null;
+
+    let sec = 0;
+    for (const part of parts) {
+      sec = sec * 60 + Number(part);
+    }
+    return Number.isFinite(sec) && sec >= 0 ? sec : null;
+  }
+
+  function getTrimGapSec(duration) {
+    if (!Number.isFinite(duration) || duration <= 0) return MIN_TRIM_GAP_SEC;
+    return Math.min(MIN_TRIM_GAP_SEC, duration);
+  }
+
+  function ensureTimeState(card) {
+    const duration = Number(card.duration || 0);
+    const hasDuration = Number.isFinite(duration) && duration > 0;
+    const minGap = getTrimGapSec(duration);
+
+    if (typeof card.trimEnabled !== 'boolean') card.trimEnabled = false;
+
+    if (!Number.isFinite(card.clipStartSec) || card.clipStartSec < 0) card.clipStartSec = 0;
+    if (hasDuration && card.clipStartSec > duration) card.clipStartSec = duration;
+
+    if (card.clipEndSec == null || !Number.isFinite(card.clipEndSec) || card.clipEndSec < 0) {
+      card.clipEndSec = hasDuration ? duration : null;
+    }
+
+    if (!hasDuration || card.clipEndSec == null) return;
+
+    if (card.clipEndSec > duration) card.clipEndSec = duration;
+
+    const maxStart = Math.max(0, card.clipEndSec - minGap);
+    if (card.clipStartSec > maxStart) card.clipStartSec = maxStart;
+
+    const minEnd = card.clipStartSec + minGap;
+    if (card.clipEndSec < minEnd) card.clipEndSec = minEnd;
+
+    if (card.clipEndSec > duration) {
+      card.clipEndSec = duration;
+      card.clipStartSec = Math.max(0, duration - minGap);
+    }
+  }
+
+  function renderTimeTools(card, idx) {
+    ensureTimeState(card);
+    const activeFormat = ensureCardFormat(card);
+    const duration = Number(card.duration || 0);
+    if (!Number.isFinite(duration) || duration <= 0) return '';
+
+    const startVal = Math.max(0, Math.min(duration, Number(card.clipStartSec || 0)));
+    const endVal = Math.max(startVal, Math.min(duration, Number(card.clipEndSec ?? duration)));
+    const minGap = getTrimGapSec(duration);
+    const sliderMax = Math.max(1, Math.floor(duration));
+    const minGapSteps = Math.max(1, Math.ceil(minGap));
+    let startSliderVal = Math.max(0, Math.min(sliderMax, Math.floor(startVal)));
+    let endSliderVal = Math.max(0, Math.min(sliderMax, Math.ceil(endVal)));
+    if (endSliderVal - startSliderVal < minGapSteps) {
+      endSliderVal = Math.min(sliderMax, startSliderVal + minGapSteps);
+      if (endSliderVal - startSliderVal < minGapSteps) {
+        startSliderVal = Math.max(0, endSliderVal - minGapSteps);
+      }
+    }
+    const fromPct = duration > 0 ? (startVal / duration) * 100 : 0;
+    const toPct = duration > 0 ? (endVal / duration) * 100 : 100;
+
+    if (!card.trimEnabled) {
+      return `
+        <div class="time-tools collapsed">
+          <label class="trim-toggle">
+            <input type="checkbox" onchange="toggleTrim(${idx}, this.checked)">
+            <span>Применить тайминг при скачивании</span>
+          </label>
+        </div>
+      `;
+    }
+
+    const trimWarningHtml = activeFormat === 'video'
+      ? `<p class="trim-warning">MP4 с примененным таймингом может загружаться медленнее.</p>`
+      : '';
+
+    return `
+      <div class="time-tools">
+        <label class="trim-toggle">
+          <input type="checkbox" checked onchange="toggleTrim(${idx}, this.checked)">
+          <span>Применить тайминг при скачивании</span>
+        </label>
+        ${trimWarningHtml}
+        <div class="time-fields">
+          <label class="time-field">
+            <span>С</span>
+            <input id="trim-field-start-${idx}" class="time-input" type="text" value="${fmtClock(startVal)}" onchange="setTimeInput(${idx}, 'start', this.value)">
+          </label>
+          <label class="time-field">
+            <span>До</span>
+            <input id="trim-field-end-${idx}" class="time-input" type="text" value="${fmtClock(endVal)}" onchange="setTimeInput(${idx}, 'end', this.value)">
+          </label>
+          <button class="trim-reset" type="button" onclick="resetTrim(${idx})">&#1057;&#1073;&#1088;&#1086;&#1089;&#1080;&#1090;&#1100;</button>
+        </div>
+        <div id="time-dual-${idx}" class="time-dual" style="--from:${fromPct.toFixed(3)}%; --to:${toPct.toFixed(3)}%;">
+          <div class="range-base"></div>
+          <div class="range-selected"></div>
+          <input id="trim-start-${idx}" class="range-start" type="range" min="0" max="${sliderMax}" step="1" value="${startSliderVal}" oninput="setTrimBySlider(${idx}, 'start', this.value)">
+          <input id="trim-end-${idx}" class="range-end" type="range" min="0" max="${sliderMax}" step="1" value="${endSliderVal}" oninput="setTrimBySlider(${idx}, 'end', this.value)">
+        </div>
+        <div class="time-slider-row">
+          <span class="time-range-label">${fmtClock(0)}</span>
+          <span class="time-slider-value">${fmtClock(duration)}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function toggleTrim(idx, enabled) {
+    const c = cardData[idx];
+    if (!c) return;
+    c.trimEnabled = !!enabled;
+    renderCard(idx);
+  }
+
+  function resetTrim(idx) {
+    const c = cardData[idx];
+    if (!c) return;
+
+    const duration = Number(c.duration || 0);
+    c.clipStartSec = 0;
+    c.clipEndSec = Number.isFinite(duration) && duration > 0 ? duration : null;
+    ensureTimeState(c);
+    syncTrimToolsDom(idx);
+  }
+
+  function syncTrimToolsDom(idx) {
+    const c = cardData[idx];
+    if (!c) return;
+    ensureTimeState(c);
+
+    const duration = Number(c.duration || 0);
+    if (!Number.isFinite(duration) || duration <= 0) return;
+
+    const startVal = Math.max(0, Math.min(duration, Number(c.clipStartSec || 0)));
+    const endVal = Math.max(startVal, Math.min(duration, Number(c.clipEndSec ?? duration)));
+    const minGap = getTrimGapSec(duration);
+    const sliderMax = Math.max(1, Math.floor(duration));
+    const minGapSteps = Math.max(1, Math.ceil(minGap));
+    let startSliderVal = Math.max(0, Math.min(sliderMax, Math.floor(startVal)));
+    let endSliderVal = Math.max(0, Math.min(sliderMax, Math.ceil(endVal)));
+    if (endSliderVal - startSliderVal < minGapSteps) {
+      endSliderVal = Math.min(sliderMax, startSliderVal + minGapSteps);
+      if (endSliderVal - startSliderVal < minGapSteps) {
+        startSliderVal = Math.max(0, endSliderVal - minGapSteps);
+      }
+    }
+    const fromPct = duration > 0 ? (startVal / duration) * 100 : 0;
+    const toPct = duration > 0 ? (endVal / duration) * 100 : 100;
+
+    const dual = document.getElementById(`time-dual-${idx}`);
+    if (dual) {
+      dual.style.setProperty('--from', `${fromPct.toFixed(3)}%`);
+      dual.style.setProperty('--to', `${toPct.toFixed(3)}%`);
+    }
+
+    const startSlider = document.getElementById(`trim-start-${idx}`);
+    const endSlider = document.getElementById(`trim-end-${idx}`);
+    if (startSlider) {
+      startSlider.min = '0';
+      startSlider.max = `${sliderMax}`;
+      startSlider.value = `${startSliderVal}`;
+    }
+    if (endSlider) {
+      endSlider.min = '0';
+      endSlider.max = `${sliderMax}`;
+      endSlider.value = `${endSliderVal}`;
+    }
+
+    const startField = document.getElementById(`trim-field-start-${idx}`);
+    const endField = document.getElementById(`trim-field-end-${idx}`);
+    if (startField) startField.value = fmtClock(startVal);
+    if (endField) endField.value = fmtClock(endVal);
+  }
+
+  function setTrimBySlider(idx, which, rawValue) {
+    const c = cardData[idx];
+    if (!c) return;
+    ensureTimeState(c);
+
+    const duration = Number(c.duration || 0);
+    const hasDuration = Number.isFinite(duration) && duration > 0;
+    const minGap = getTrimGapSec(duration);
+    let val = Number(rawValue);
+    if (!Number.isFinite(val) || val < 0) val = 0;
+    if (hasDuration && val > duration) val = duration;
+
+    if (which === 'start') {
+      const currentEnd = c.clipEndSec == null ? (hasDuration ? duration : val + minGap) : Number(c.clipEndSec);
+      c.clipStartSec = Math.min(val, Math.max(0, currentEnd - minGap));
+    } else {
+      c.clipEndSec = Math.max(val, Number(c.clipStartSec || 0) + minGap);
+    }
+    ensureTimeState(c);
+    syncTrimToolsDom(idx);
+  }
+
+  function setTimeInput(idx, field, rawValue) {
+    const c = cardData[idx];
+    if (!c) return;
+    ensureTimeState(c);
+
+    const parsed = parseClockInput(rawValue);
+    if (parsed === null) {
+      syncTrimToolsDom(idx);
+      return;
+    }
+
+    const duration = Number(c.duration || 0);
+    const hasDuration = Number.isFinite(duration) && duration > 0;
+    const minGap = getTrimGapSec(duration);
+    let val = parsed;
+    if (hasDuration && val > duration) val = duration;
+
+    if (field === 'start') {
+      const currentEnd = c.clipEndSec == null ? (hasDuration ? duration : val + minGap) : Number(c.clipEndSec);
+      const maxStart = Math.max(0, currentEnd - minGap);
+      c.clipStartSec = Math.min(val, maxStart);
+    } else {
+      const minEnd = Number(c.clipStartSec || 0) + minGap;
+      c.clipEndSec = Math.max(val, minEnd);
+      if (hasDuration && c.clipEndSec > duration) c.clipEndSec = duration;
+    }
+    ensureTimeState(c);
+    syncTrimToolsDom(idx);
+  }
+
+  function getTrimPayload(card) {
+    ensureTimeState(card);
+    const duration = Number(card.duration || 0);
+    if (!card.trimEnabled) {
+      return { start_sec: '', end_sec: '' };
+    }
+
+    const start = Math.max(0, Number(card.clipStartSec || 0));
+    const fallbackEnd = Number.isFinite(duration) && duration > 0 ? duration : null;
+    const end = card.clipEndSec == null ? fallbackEnd : Math.max(0, Number(card.clipEndSec));
+
+    return {
+      start_sec: `${start.toFixed(3)}`,
+      end_sec: end != null ? `${end.toFixed(3)}` : '',
+    };
+  }
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function formatQualityLabel(label) {
+    const text = String(label ?? '').trim();
+    if (!text) return '';
+
+    const parts = text.split(/\s*·\s*/).filter(Boolean);
+    const normalizedParts = parts.length ? parts : [text];
+    return normalizedParts.map((part, index) => {
+      const chunk = index === 0 ? part : `· ${part}`;
+      return `<span class="q-chip-segment">${esc(chunk).replace(/ /g, '&nbsp;')}</span>`;
+    }).join('');
+  }
+
+  function detectThumbnailVertical(src) {
+    return new Promise(resolve => {
+      if (!src) {
+        resolve(null);
+        return;
+      }
+
+      const img = new Image();
+      img.decoding = 'async';
+      img.onload = () => {
+        if (!img.naturalWidth || !img.naturalHeight) {
+          resolve(null);
+          return;
+        }
+        resolve(img.naturalHeight > img.naturalWidth);
+      };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  }
+
+  async function syncCardVerticalByThumbnail(idx, src) {
+    const verticalByThumb = await detectThumbnailVertical(src);
+    if (verticalByThumb === null) return;
+
+    const card = cardData[idx];
+    if (!card || card.status === 'info-error' || card.thumbnail !== src) return;
+
+    const newVertical = card.isVertical || verticalByThumb;
+    if (card.isVertical !== newVertical) {
+      card.isVertical = newVertical;
+      renderCard(idx);
+    }
+  }
+
+  function friendlyError(err) {
+    if (!err) return 'Неизвестная ошибка';
+    if (err.includes('Unsupported URL')) return 'Этот URL не поддерживается';
+    if (err.includes('Video unavailable')) return 'Видео недоступно или является приватным';
+    if (err.includes('Private video')) return 'Это приватное видео';
+    if (err.includes('HTTP Error 403')) return 'Доступ к ресурсу запрещён';
+    if (err.includes('HTTP Error 404')) return 'Видео не найдено';
+    if (err.includes('copyright')) return 'Видео заблокировано из-за авторских прав';
+    if (err.includes('geo')) return 'Видео недоступно в вашем регионе';
+    if (err.includes('timed out') || err.includes('Timed out')) return 'Время ожидания истекло — попробуйте ещё раз';
+    if (err.includes('network') || err.includes('Network')) return 'Ошибка сети — проверьте подключение';
+    return err.length > 120 ? err.slice(0, 120) + '...' : err;
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function createDownloadFrame() {
+    const id = `download-frame-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const frame = document.createElement('iframe');
+    frame.id = id;
+    frame.name = id;
+    frame.style.display = 'none';
+    document.body.appendChild(frame);
+    return frame;
+  }
+
+  function startPreparedDownload(jobId) {
+    if (!jobId) return;
+    const frame = createDownloadFrame();
+    frame.src = `${BASE_PATH}/api/fetch/${encodeURIComponent(jobId)}`;
+    setTimeout(() => {
+      frame.remove();
+    }, 120000);
+  }
+
+  function getCardMetaText(card) {
+    const parts = [];
+    if (card.uploader) parts.push(card.uploader);
+    if (card.duration) parts.push(fmtDur(card.duration));
+    if (card.site) parts.push(card.site);
+    return parts.join(' · ');
+  }
+
+  function isCardBusy(card) {
+    return ['starting', 'downloading', 'processing'].includes(card?.status);
+  }
+
+  function clearCardPoll(card) {
+    if (!card) return;
+    if (card.pollTimer) {
+      clearTimeout(card.pollTimer);
+      card.pollTimer = null;
+    }
+  }
+
+  function updateResultsSectionVisibility() {
+    const resultsSection = document.getElementById('resultsSection');
+    if (!resultsSection) return;
+    resultsSection.hidden = cardData.length === 0;
+  }
+
+  async function requestCancelJob(jobId) {
+    if (!jobId) return;
+    try {
+      await fetch(`${BASE_PATH}/api/cancel/${encodeURIComponent(jobId)}`, { method: 'POST' });
+    } catch (_) {}
+  }
+
+  async function cancelCardDownload(idx, silent = false) {
+    const c = cardData[idx];
+    if (!c || !c.jobId) return;
+
+    const jobId = c.jobId;
+    clearCardPoll(c);
+    c.jobId = null;
+
+    await requestCancelJob(jobId);
+
+    c.status = 'ready';
+    c.downloadStatusText = '';
+    c.error = null;
+
+    if (!silent) {
+      renderCard(idx);
+      renderDownloadAll();
+    }
+  }
+
+  async function cancelAllRunningJobs(silent = false) {
+    const tasks = [];
+    for (let i = 0; i < cardData.length; i++) {
+      if (cardData[i]?.jobId) {
+        tasks.push(cancelCardDownload(i, silent));
+      }
+    }
+    await Promise.allSettled(tasks);
+  }
+
+  async function removeCard(idx) {
+    const c = cardData[idx];
+    if (!c) return;
+    if (c.jobId) {
+      await cancelCardDownload(idx, true);
+    }
+    cardData.splice(idx, 1);
+    rerenderAllCards();
+  }
+
+  function updateBusyCardStatus(idx) {
+    const c = cardData[idx];
+    const el = document.getElementById(`card-${idx}`);
+    if (!c || !el) return false;
+
+    const statusEl = el.querySelector('.card-status');
+    const textEl = el.querySelector('.card-status-text');
+    const spinEl = el.querySelector('.spin');
+    if (!statusEl || !textEl || !spinEl) return false;
+
+    statusEl.classList.toggle('downloading', true);
+    statusEl.classList.toggle('error', false);
+    textEl.textContent = c.downloadStatusText || 'Подготовка загрузки...';
+    spinEl.style.animationName = 'spin';
+    spinEl.style.animationDuration = '0.7s';
+    spinEl.style.animationTimingFunction = 'linear';
+    spinEl.style.animationIterationCount = 'infinite';
+    spinEl.style.animationPlayState = 'running';
+    return true;
+  }
+
+  function rerenderAllCards() {
+    const container = document.getElementById('cards');
+    if (!container) return;
+    container.innerHTML = '';
+    cardData.forEach((_, idx) => renderCard(idx));
+    renderDownloadAll();
+    updateResultsSectionVisibility();
+  }
+
+  async function pollJobStatus(idx, jobId) {
+    const c = cardData[idx];
+    if (!c || c.jobId !== jobId) return;
+
+    try {
+      const res = await fetch(`${BASE_PATH}/api/job/${encodeURIComponent(jobId)}`, { cache: 'no-store' });
+      const data = await res.json();
+
+      if (!cardData[idx] || cardData[idx].jobId !== jobId) return;
+
+      if (!res.ok || data.error) {
+        cardData[idx].jobId = null;
+        cardData[idx].status = 'error';
+        cardData[idx].error = data.error || 'Не удалось получить статус загрузки';
+        cardData[idx].downloadStatusText = '';
+        renderCard(idx);
+        renderDownloadAll();
+        return;
+      }
+
+      if (data.status === 'ready') {
+        clearCardPoll(cardData[idx]);
+        cardData[idx].jobId = null;
+        cardData[idx].status = 'ready';
+        cardData[idx].downloadStatusText = '';
+        renderCard(idx);
+        renderDownloadAll();
+        startPreparedDownload(jobId);
+        return;
+      }
+
+      if (data.status === 'cancelled') {
+        clearCardPoll(cardData[idx]);
+        cardData[idx].jobId = null;
+        cardData[idx].status = 'ready';
+        cardData[idx].downloadStatusText = '';
+        cardData[idx].error = null;
+        renderCard(idx);
+        renderDownloadAll();
+        return;
+      }
+
+      if (data.status === 'error') {
+        clearCardPoll(cardData[idx]);
+        cardData[idx].jobId = null;
+        cardData[idx].status = 'error';
+        cardData[idx].downloadStatusText = '';
+        cardData[idx].error = data.error || 'Ошибка загрузки';
+        renderCard(idx);
+        renderDownloadAll();
+        return;
+      }
+
+      const nextStatus = data.status === 'processing' ? 'processing' : (data.status === 'downloading' ? 'downloading' : 'starting');
+      const wasBusy = isCardBusy(cardData[idx]);
+      cardData[idx].status = nextStatus;
+      cardData[idx].downloadStatusText = data.percent != null
+        ? `${data.message || 'Подготовка загрузки...'} ${data.percent}%`
+        : (data.message || 'Подготовка загрузки...');
+
+      if (!wasBusy || !updateBusyCardStatus(idx)) {
+        renderCard(idx);
+      }
+
+      clearCardPoll(cardData[idx]);
+      cardData[idx].pollTimer = setTimeout(() => pollJobStatus(idx, jobId), 900);
+    } catch (err) {
+      if (!cardData[idx] || cardData[idx].jobId !== jobId) return;
+      clearCardPoll(cardData[idx]);
+      cardData[idx].jobId = null;
+      cardData[idx].status = 'error';
+      cardData[idx].downloadStatusText = '';
+      cardData[idx].error = err.message || 'Не удалось получить статус загрузки';
+      renderCard(idx);
+      renderDownloadAll();
+    }
+  }
+
+  document.getElementById('urls').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      e.preventDefault();
+      go();
+    }
+  });
+
+  document.getElementById('urls').addEventListener('input', () => {
+    updateUrlLimitWarning();
+  });
+
+  async function go() {
+    const urls = parseUrls(document.getElementById('urls').value);
+    if (!urls.length) {
+      updateUrlLimitWarning(urls);
+      updateResultsSectionVisibility();
+      return;
+    }
+    if (!updateUrlLimitWarning(urls)) return;
+
+    const btn = document.getElementById('goBtn');
+    const container = document.getElementById('cards');
+    const resultsSection = document.getElementById('resultsSection');
+    const existingCardsByUrl = new Map(
+      cardData
+        .filter(card => card && card.url && card.status !== 'loading' && card.status !== 'info-error')
+        .map(card => [card.url, card])
+    );
+
+    // Cancel downloads only for cards whose URLs are NOT in the new list
+    const newUrlsSet = new Set(urls);
+    for (let i = 0; i < cardData.length; i++) {
+      if (cardData[i]?.jobId && !newUrlsSet.has(cardData[i].url)) {
+        await cancelCardDownload(i, true);
+      }
+    }
+
+    if (resultsSection) resultsSection.hidden = false;
+
+    btn.disabled = true;
+    btn.textContent = 'Загрузка...';
+    container.innerHTML = '';
+
+    const oldPollTimers = new Map();
+    cardData = urls.map(url => {
+      const existingCard = existingCardsByUrl.get(url);
+      if (existingCard) {
+        // Preserve busy cards with their active jobId and pollTimer
+        if (existingCard.jobId && existingCard.pollTimer) {
+          oldPollTimers.set(url, { jobId: existingCard.jobId, timer: existingCard.pollTimer });
+          existingCard.pollTimer = null; // detach so clearCardPoll doesn't kill it yet
+        } else {
+          clearCardPoll(existingCard);
+        }
+        return existingCard;
+      }
+
+      const cachedInfo = getCachedCardInfo(url);
+      if (cachedInfo) {
+        return buildCardFromInfo(url, cachedInfo);
+      }
+
+      return { url, status: 'loading', infoRequestId: ++nextInfoRequestId };
+    });
+
+    cardData.forEach((_, idx) => renderCard(idx));
+    updateResultsSectionVisibility();
+
+    // Restart polling for busy cards at their new indices
+    for (let idx = 0; idx < cardData.length; idx++) {
+      const c = cardData[idx];
+      if (c.jobId) {
+        const saved = oldPollTimers.get(c.url);
+        if (saved) {
+          clearTimeout(saved.timer);
+        }
+        pollJobStatus(idx, c.jobId);
+      }
+    }
+
+    try {
+      await runInBatches(
+        cardData
+          .map((card, idx) => ({ url: card.url, idx, requestId: card.infoRequestId, shouldLoad: card.status === 'loading' }))
+          .filter(item => item.shouldLoad),
+        3,
+        ({ url, idx, requestId }) => loadCardInfo(url, idx, requestId)
+      );
+
+      renderDownloadAll();
+    } finally {
+      updateUrlLimitWarning(urls);
+      btn.textContent = 'Найти';
+    }
+  }
+
+  function renderCard(idx) {
+    const c = cardData[idx];
+    const activeFormat = c ? ensureCardFormat(c) : 'video';
+    let el = document.getElementById(`card-${idx}`);
+
+    if (!el) {
+      el = document.createElement('div');
+      el.id = `card-${idx}`;
+      el.className = 'card';
+      document.getElementById('cards').appendChild(el);
+    }
+
+    if (c.status === 'loading') {
+      el.className = 'card';
+      el.innerHTML = `
+        <div class="card-thumb loading"></div>
+        <div class="card-head">
+          <div class="card-title-wrap">
+            <div class="skeleton-lines">
+              <div class="skeleton-line medium"></div>
+              <div class="skeleton-line short"></div>
+            </div>
+          </div>
+          <button class="card-remove-btn" type="button" aria-label="Удалить видео" onclick="removeCard(${idx})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    if (c.status === 'info-error') {
+      el.className = 'card card-error';
+      el.innerHTML = `
+        <div class="card-thumb">
+          <div class="card-error-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+        </div>
+        <div class="card-head">
+          <div class="card-title-wrap">
+            <div class="card-title">Не удалось получить информацию о видео</div>
+          </div>
+          <button class="card-remove-btn" type="button" aria-label="Удалить видео" onclick="removeCard(${idx})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="card-error-msg">${esc(friendlyError(c.error || ''))}</div>
+          <div class="card-error-url">${esc(c.url)}</div>
+        </div>
+      `;
+      return;
+    }
+
+    el.className = 'card';
+
+    let thumbHtml;
+    const isVerticalThumb = !!(c.thumbnail && c.isVertical);
+    const thumbClass = isVerticalThumb ? 'card-thumb vertical' : 'card-thumb';
+
+    if (c.thumbnail) {
+      const thumbSrc = esc(c.thumbnail);
+      if (isVerticalThumb) {
+        thumbHtml = `<img class="thumb-bg-img" src="${thumbSrc}" alt="" aria-hidden="true" onerror="this.remove()"><img class="thumb-fg" src="${thumbSrc}" alt="" onerror="this.parentElement.innerHTML='<div class=\'no-thumb\' style=\'color: var(--text-muted)\'><svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.6\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'2\' y=\'2\' width=\'20\' height=\'20\' rx=\'2\'/><circle cx=\'8\' cy=\'8\' r=\'1.5\'/><path d=\'m21 15-5-5L5 21\'/></svg></div>'">`;
+      } else {
+        thumbHtml = `<img class="thumb-main" src="${thumbSrc}" alt="" onerror="this.parentElement.innerHTML='<div class=\'no-thumb\' style=\'color: var(--text-muted)\'><svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.6\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'2\' y=\'2\' width=\'20\' height=\'20\' rx=\'2\'/><circle cx=\'8\' cy=\'8\' r=\'1.5\'/><path d=\'m21 15-5-5L5 21\'/></svg></div>'">`;
+      }
+    } else if (activeFormat === 'mp3') {
+      thumbHtml = `<div class="no-thumb" style="color: var(--neon-accent)"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>`;
+    } else {
+      thumbHtml = `<div class="no-thumb" style="color: var(--text-muted)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>`;
+    }
+
+    const activeFormats = getFormatsForType(c, activeFormat);
+    const selectedFormatId = ensureSelectedFormat(c, activeFormat);
+    let qualityChips = '';
+    if (activeFormats.length > 1) {
+      qualityChips = activeFormats.map(f =>
+        `<button class="q-chip${String(f.id) === String(selectedFormatId) ? ' active' : ''}" type="button" aria-label="${esc(f.label)}" onclick="pickFormat(${idx}, '${activeFormat}', '${String(f.id).replace(/'/g, "\'")}')"><span class="q-chip-label">${formatQualityLabel(f.label)}</span></button>`
+      ).join('');
+    }
+    const qualityBlock = qualityChips ? `<div class="quality-list">${qualityChips}</div>` : '';
+    const timeToolsHtml = renderTimeTools(c, idx);
+    const metaText = getCardMetaText(c);
+    const formatControlsHtml = `
+      <div class="card-format-block">
+        <div class="pill-group card-pill-group" role="tablist" aria-label="Формат загрузки для видео ${idx + 1}">
+          <button class="pill${activeFormat === 'video' ? ' active' : ''}" type="button" onclick="setCardFormat(${idx}, 'video')" ${c.formats && c.formats.length ? '' : 'disabled'}>MP4</button>
+          <button class="pill${activeFormat === 'mp3' ? ' active' : ''}" type="button" onclick="setCardFormat(${idx}, 'mp3')" ${c.mp3Formats && c.mp3Formats.length ? '' : 'disabled'}>MP3</button>
+        </div>
+        <p class="format-warning card-format-warning${activeFormat === 'mp3' ? '' : ' is-hidden'}">В некоторых случаях MP3 может загружаться медленнее.</p>
+      </div>`;
+
+    const unavailableAudioNote =
+      activeFormat === 'video' && (!c.formats || !c.formats.length)
+        ? `<span class="card-status error">Формат MP4 недоступен для этого источника</span>`
+        : activeFormat === 'mp3' && (!c.mp3Formats || !c.mp3Formats.length)
+        ? `<span class="card-status error">Конвертация в MP3 недоступна для этого источника</span>`
+        : '';
+
+    let primaryActionHtml = '';
+    let bodyStatusHtml = unavailableAudioNote;
+    const bodyContentHtml = `${qualityBlock ? `<div class="card-quality-slot">${qualityBlock}</div>` : ''}${timeToolsHtml ? `<div class="card-time-slot">${timeToolsHtml}</div>` : ''}`;
+
+    if (c.status === 'ready') {
+      primaryActionHtml = `<button class="card-dl-btn" type="button" onclick="dlCard(${idx})" ${
+        (activeFormat === 'video' && (!c.formats || !c.formats.length)) ||
+        (activeFormat === 'mp3' && (!c.mp3Formats || !c.mp3Formats.length))
+          ? 'disabled'
+          : ''
+      }>Загрузить</button>`;
+    } else if (isCardBusy(c)) {
+      primaryActionHtml = `<button class="card-cancel-btn" type="button" onclick="cancelCardDownload(${idx})">Отменить</button>`;
+      bodyStatusHtml = `<span class="card-status downloading"><span class="card-status-body"><span class="spin"></span><span class="card-status-text">${esc(c.downloadStatusText || 'Подготовка загрузки...')}</span></span></span>`;
+    } else if (c.status === 'error') {
+      primaryActionHtml = `<button class="card-dl-btn error" type="button" onclick="dlCard(${idx})">Повторить попытку</button>`;
+      bodyStatusHtml = `<span class="card-status error">${esc(friendlyError(c.error || 'Ошибка загрузки'))}</span>`;
+    }
+
+    el.innerHTML = `
+      <div class="${thumbClass}">${thumbHtml}</div>
+      <div class="card-head">
+        <div class="card-title-wrap">
+          <div class="card-title">${esc(c.title || 'Без названия')}</div>
+          <div class="card-meta">${esc(metaText || 'Ресурс недоступен')}</div>
+          ${bodyStatusHtml ? `<div class="card-status-panel">${bodyStatusHtml}</div>` : ''}
+        </div>
+        <button class="card-remove-btn" type="button" aria-label="Удалить видео" onclick="removeCard(${idx})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      ${bodyContentHtml ? `<div class="card-body"><div class="card-body-main">${bodyContentHtml}</div></div>` : ''}
+      ${primaryActionHtml || formatControlsHtml ? `<div class="card-side-controls">${primaryActionHtml}${formatControlsHtml}</div>` : ''}
+    `;
+  }
+
+  function renderDownloadAll() {
+    const existing = document.getElementById('dl-all-bar');
+    if (existing) existing.remove();
+
+    const readyCount = cardData.filter(c => c.status === 'ready' && canDownloadCard(c)).length;
+    const runningCount = cardData.filter(c => c && c.jobId).length;
+    const hasCards = cardData.some(c => c && c.status !== 'loading' && c.status !== 'info-error');
+    if (!hasCards) return;
+
+    const bar = document.createElement('div');
+    bar.id = 'dl-all-bar';
+    bar.className = 'dl-all-bar';
+    bar.innerHTML = `
+      <button class="dl-all-cancel-btn" type="button" onclick="cancelAllDownloads()" ${runningCount ? '' : 'disabled'}>Отменить всё</button>
+      <button class="dl-all-btn" type="button" onclick="dlAll()" ${readyCount >= 1 ? '' : 'disabled'}>Загрузить всё</button>`;
+    document.getElementById('cards').appendChild(bar);
+  }
+
+  function pickFormat(idx, formatType, formatId) {
+    if (!cardData[idx].selectedFormats) cardData[idx].selectedFormats = {};
+    cardData[idx].selectedFormats[formatType] = String(formatId);
+    renderCard(idx);
+  }
+
+  function setCardFormat(idx, formatType) {
+    const card = cardData[idx];
+    if (!card || !ALLOWED_FORMATS.has(formatType) || !isFormatAvailable(card, formatType)) return;
+    card.activeFormat = formatType;
+    renderCard(idx);
+    renderDownloadAll();
+  }
+
+  async function dlCard(idx) {
+    const c = cardData[idx];
+    if (!c) return;
+    const activeFormat = ensureCardFormat(c);
+
+    if (isCardBusy(c)) return;
+
+    if (activeFormat === 'video' && (!c.formats || !c.formats.length)) {
+      c.status = 'error';
+      c.error = 'Формат MP4 недоступен для этого видео';
+      renderCard(idx);
+      return;
+    }
+
+    if (activeFormat === 'mp3' && (!c.mp3Formats || !c.mp3Formats.length)) {
+      c.status = 'error';
+      c.error = 'У этого видео нет доступного аудиопотока для конвертации в MP3';
+      renderCard(idx);
+      return;
+    }
+
+    const selectedFormatId = ensureSelectedFormat(c, activeFormat);
+    const trimPayload = getTrimPayload(c);
+    if (trimPayload.end_sec && Number(trimPayload.end_sec) <= Number(trimPayload.start_sec || 0)) {
+      c.status = 'error';
+      c.error = 'Время окончания должно быть больше времени начала';
+      renderCard(idx);
+      return;
+    }
+
+    clearCardPoll(c);
+    c.status = 'starting';
+    c.error = null;
+    c.downloadStatusText = 'Создание задачи...';
+    renderCard(idx);
+
+    try {
+      const res = await fetch(`${BASE_PATH}/api/prepare`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: c.url,
+          format: activeFormat,
+          format_id: selectedFormatId || '',
+          start_sec: trimPayload.start_sec,
+          end_sec: trimPayload.end_sec,
+          title: c.title || '',
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error || !data.job_id) {
+        throw new Error(data.error || 'Не удалось начать загрузку');
+      }
+
+      c.jobId = data.job_id;
+      c.downloadStatusText = data.message || 'Подготовка загрузки...';
+      renderCard(idx);
+      renderDownloadAll();
+      pollJobStatus(idx, data.job_id);
+    } catch (err) {
+      c.jobId = null;
+      c.status = 'error';
+      c.downloadStatusText = '';
+      c.error = err.message || 'Не удалось начать загрузку';
+      renderCard(idx);
+    }
+  }
+
+  async function runInBatches(items, batchSize, worker) {
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
+      await Promise.allSettled(
+        batch.map(worker)
+      );
+    }
+  }
+
+  async function cancelAllDownloads() {
+    const btn = document.querySelector('.dl-all-cancel-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Отмена...';
+    }
+
+    await cancelAllRunningJobs(false);
+    renderDownloadAll();
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Отменить всё';
+    }
+  }
+
+  async function dlAll() {
+    const btn = document.querySelector('.dl-all-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Запуск...';
+    }
+
+    const readyIndexes = [];
+    for (let i = 0; i < cardData.length; i++) {
+      if (cardData[i].status === 'ready' && canDownloadCard(cardData[i])) {
+        readyIndexes.push(i);
+      }
+    }
+
+    for (const idx of readyIndexes) {
+      dlCard(idx);
+      await sleep(350);
+    }
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Загрузить всё';
+    }
+  }
+
+  (function() {
+    const grip = document.querySelector('.textarea-wrap .resize-grip');
+    const textarea = document.getElementById('urls');
+    if (!grip || !textarea) return;
+    let startY, startH;
+    function onStart(e) {
+      e.preventDefault();
+      const pt = e.touches ? e.touches[0] : e;
+      startY = pt.clientY;
+      startH = textarea.offsetHeight;
+      document.addEventListener('touchmove', onMove, { passive: false });
+      document.addEventListener('touchend', onEnd);
+      document.addEventListener('mousemove', onMove, { passive: false });
+      document.addEventListener('mouseup', onEnd);
+    }
+    function onMove(e) {
+      e.preventDefault();
+      const pt = e.touches ? e.touches[0] : e;
+      textarea.style.height = Math.max(80, startH + pt.clientY - startY) + 'px';
+    }
+    function onEnd() {
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onEnd);
+    }
+    grip.addEventListener('touchstart', onStart, { passive: false });
+    grip.addEventListener('mousedown', onStart);
+  })();
+
+  async function loadCardInfo(url, idx, requestId) {
+    try {
+      const res = await fetch(`${BASE_PATH}/api/info`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+
+      const text = await res.text();
+      let data;
+
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Сервер вернул ответ не в формате JSON: ${text.slice(0, 120)}`);
+      }
+
+      if (!cardData[idx] || cardData[idx].url !== url || cardData[idx].infoRequestId !== requestId) return;
+
+      if (data.error) {
+        cardData[idx] = { ...cardData[idx], status: 'info-error', error: data.error };
+      } else {
+        cacheCardInfo(url, data);
+        cardData[idx] = buildCardFromInfo(url, data, cardData[idx]);
+
+        if (cardData[idx].thumbnail) {
+          syncCardVerticalByThumbnail(idx, cardData[idx].thumbnail);
+        }
+      }
+    } catch (err) {
+      if (!cardData[idx] || cardData[idx].url !== url || cardData[idx].infoRequestId !== requestId) return;
+      cardData[idx] = { ...cardData[idx], status: 'info-error', error: err.message };
+    }
+
+    renderCard(idx);
+  }
+</script>
+</body>
+</html>

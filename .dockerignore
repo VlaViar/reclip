@@ -1,0 +1,9 @@
+.git
+.gitignore
+README.md
+compose.yaml
+runtime_downloads/
+__pycache__
+*.pyc
+.env
+.dockerignore
